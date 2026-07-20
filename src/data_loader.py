@@ -5,6 +5,13 @@ from src.utils.logger import logger
 class DataLoader:
     """Handles loading CSV files into pandas DataFrames."""
 
+    REQUIRED_COLUMNS = [
+        "Date",
+        "Product",
+        "Region",
+        "Revenue"
+    ]
+
     @staticmethod
     def load_csv(file_path: str | Path) -> pd.DataFrame:
         """
@@ -18,7 +25,7 @@ class DataLoader:
 
         Raises:
             FileNotFoundError: If the file does not exist.
-            ValueError: If the CSV is empty.
+            ValueError: If the CSV is invalid.
             RuntimeError: If the CSV cannot be loaded.
         """
 
@@ -37,14 +44,58 @@ class DataLoader:
                 logger.error("The uploaded CSV is empty.")
                 raise ValueError("The uploaded CSV is empty.")
 
-            logger.info(f"CSV loaded successfully ({len(dataframe)} rows, {len(dataframe.columns)} columns).")
+            DataLoader._validate_columns(dataframe)
+
+            DataLoader._validate_data_types(dataframe)
+
+            rows = len(dataframe)
+            columns = len(dataframe.columns)
+
+            logger.info(
+                f"CSV loaded successfully "
+                f"({rows} rows, {columns} columns)."
+            )
 
             return dataframe
-
         except pd.errors.EmptyDataError:
             logger.error("CSV file contains no data.")
             raise ValueError("CSV file contains no data.")
 
         except Exception as e:
             logger.error(f"Unexpected error while loading CSV: {e}")
-            raise RuntimeError("Unable to load the CSV file.") from e
+            raise RuntimeError("Unable to load the CSV file.")
+
+    @staticmethod
+    def _validate_columns(dataframe: pd.DataFrame) -> None:
+        """
+        Validate required CSV columns.
+        """
+
+        missing_columns = [column for column in DataLoader.REQUIRED_COLUMNS if column not in dataframe.columns]
+
+        if missing_columns:
+            logger.error(f"Missing columns: {missing_columns}")
+
+            raise ValueError("Missing required columns: " + ", ".join(missing_columns))
+
+    @staticmethod
+    def _validate_data_types(dataframe: pd.DataFrame) -> None:
+        """
+        Validate required column data types.
+        """
+
+        invalid_revenue = pd.to_numeric(
+            dataframe["Revenue"],
+            errors="coerce"
+        ).isna()
+
+        if invalid_revenue.any():
+
+            invalid_count = invalid_revenue.sum()
+
+            logger.error(f"Found {invalid_count} invalid Revenue values.")
+
+            raise ValueError(
+                f"Revenue column contains "
+                f"{invalid_count} invalid values."
+            )
