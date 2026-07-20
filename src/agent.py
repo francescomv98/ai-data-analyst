@@ -60,20 +60,24 @@ class Agent:
 
         dataframe = self.manager.get_top_products()
 
+        figure = ChartGenerator.plot_top_products(dataframe)
+
         return {
             "message": "Top products by revenue.",
             "table": dataframe,
-            "chart": None
+            "chart": figure
         }
 
     def _best_region(self) -> dict:
 
         dataframe = self.manager.get_best_region()
 
+        figure = ChartGenerator.plot_best_region(dataframe)
+
         return {
             "message": "Regions ranked by revenue.",
             "table": dataframe,
-            "chart": None
+            "chart": figure
         }
 
     def _monthly_revenue(self) -> dict:
