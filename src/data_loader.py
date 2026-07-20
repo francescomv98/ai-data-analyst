@@ -60,9 +60,10 @@ class DataLoader:
         except pd.errors.EmptyDataError:
             logger.error("CSV file contains no data.")
             raise ValueError("CSV file contains no data.")
-
-        except Exception as e:
-            logger.error(f"Unexpected error while loading CSV: {e}")
+        except (FileNotFoundError, ValueError):
+            raise
+        except Exception:
+            logger.exception("Unexpected error while loading CSV.")
             raise RuntimeError("Unable to load the CSV file.")
 
     @staticmethod
@@ -75,7 +76,6 @@ class DataLoader:
 
         if missing_columns:
             logger.error(f"Missing columns: {missing_columns}")
-
             raise ValueError("Missing required columns: " + ", ".join(missing_columns))
 
     @staticmethod
@@ -84,10 +84,7 @@ class DataLoader:
         Validate required column data types.
         """
 
-        invalid_revenue = pd.to_numeric(
-            dataframe["Revenue"],
-            errors="coerce"
-        ).isna()
+        invalid_revenue = pd.to_numeric(dataframe["Revenue"], errors="coerce").isna()
 
         if invalid_revenue.any():
 
