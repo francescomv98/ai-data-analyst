@@ -340,6 +340,10 @@ APP_VERSION=1.0.0
 OPENAI_API_KEY=your_openai_api_key
 
 CHAT_MODEL=gpt-4.1-mini
+
+UPLOAD_DIRECTORY=data/uploads
+
+LOG_DIRECTORY=logs
 ```
 
 The application uses Pydantic Settings to load configuration values.
