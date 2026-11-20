@@ -2,168 +2,74 @@
 
 An AI-powered data analysis assistant built with Python, Gradio, Pandas and OpenAI.
 
-The application allows users to upload CSV files and interact with an AI agent capable of understanding natural language requests, performing data analysis operations and generating visual insights.
+Upload a CSV with your sales data, ask a question in plain English and get back an answer, a table and a chart.
 
-Users can ask questions such as:
+<p align="center">
+  <img src="docs/images/screenshot1.png" alt="Home screen: upload area, question box and example questions" width="49%">
+  <img src="docs/images/screenshot2.png" alt="Result of 'Which region performs best?' with table and bar chart" width="49%">
+</p>
+
+You can ask things like:
 - What are the top 5 products?
 - Show average revenue.
 - Which region performs best?
 - Plot monthly revenue.
 
-The goal of this project is to demonstrate the implementation of an AI agent workflow combining LLM-based intent detection, data processing, visualization generation and a user-friendly Gradio interface.
+The goal of the project is to show a simple AI agent workflow: the LLM understands what the user wants, Pandas does the analysis, Matplotlib draws the chart and Gradio puts everything in a web page.
 
 ---
 
 ## Features
 
-- CSV file upload through Gradio interface
-- Natural language data analysis requests
-- OpenAI-powered request classification
-- Automated Pandas data analysis
-- Revenue calculations
-- Product ranking analysis
-- Regional performance analysis
-- Monthly revenue aggregation
-- Automatic chart generation with Matplotlib
-- Data validation and error handling
-- Structured logging
-- Configuration management with Pydantic Settings
+- CSV upload from the browser, with validation and clear error messages
+- Questions in natural language, classified by an OpenAI model
+- Average revenue, top products, best region and monthly revenue analysis
+- Charts generated automatically with Matplotlib
+- The UI opens in the browser as soon as the app starts
+- Logging to console and to `logs/app.log`
+- Configuration through a `.env` file (Pydantic Settings)
 - Unit tests with pytest
-
----
-
-## Architecture
-
-The application follows a modular architecture where each component has a specific responsibility.
-
-```
-                         User
-                          |
-                          v
-                  +---------------+
-                  |    Gradio     |
-                  |  Interface    |
-                  +---------------+
-                          |
-                          v
-                  +---------------+
-                  |     Agent     |
-                  | Orchestrator  |
-                  +---------------+
-                    |          |
-                    |          |
-                    v          v
-
-          +---------------+   +---------------+
-          | Data Loader   |   | OpenAI Client |
-          |               |   | Intent        |
-          | CSV Parsing   |   | Detection     |
-          +---------------+   +---------------+
-                    |
-                    v
-
-          +----------------------+
-          | DataFrame Manager    |
-          |----------------------|
-          | - Average revenue    |
-          | - Top products       |
-          | - Best region        |
-          | - Monthly revenue    |
-          +----------------------+
-
-                    |
-                    v
-
-          +----------------------+
-          | Chart Generator      |
-          |----------------------|
-          | - Matplotlib charts  |
-          | - Data visualization |
-          +----------------------+
-```
 
 ---
 
 ## How it works
 
-The workflow follows these steps:
-1. The user uploads a CSV file through the Gradio interface.
-2. The file is loaded and validated.
-3. The user sends a natural language request.
-4. The request is analyzed by the OpenAI client.
-5. The LLM classifies the requested operation.
-6. The Agent executes the corresponding Pandas analysis.
-7. If required, Matplotlib generates a visualization.
-8. The result is returned to the user through the Gradio interface.
-
-Example:
-
 ```
-User:
-"Which region performs best?"
-
-        |
-        v
-
-OpenAI Intent Detection
-
-        |
-        v
-
-best_region
-
-        |
-        v
-
-DataFrame Analysis
-
-        |
-        v
-
-Result + Visualization
+CSV upload ──> Data Loader (validation)
+                     │
+User question ──> OpenAI client ──> action (e.g. best_region)
+                     │
+                     v
+              DataFrame Manager (Pandas)
+                     │
+                     v
+              Chart Generator (Matplotlib)
+                     │
+                     v
+          Answer + table + chart in Gradio
 ```
 
----
+1. The user uploads a CSV file. It is checked for required columns, valid revenue values and valid dates.
+2. The user asks a question.
+3. The OpenAI client maps the question to one of the supported actions.
+4. The agent runs the matching Pandas analysis.
+5. If it makes sense, a chart is generated.
+6. The answer, the table and the chart are shown in the interface.
 
-## Main Components
-
-### Agent
-
-The main orchestrator of the application.
-
-Responsibilities:
-- coordinate the workflow;
-- manage the interaction between components;
-- execute the correct analysis operation.
+The model is only used to understand the question: all the numbers are computed locally with Pandas, so the results don't depend on the LLM.
 
 ---
 
-### Data Loader
+## Main components
 
-Responsible for CSV ingestion.
-
-Features:
-- file validation;
-- required column checking;
-- data type validation;
-- error handling.
-
-Supported validation cases:
-- missing files;
-- empty CSV files;
-- missing columns;
-- invalid numerical values.
-
----
-
-### OpenAI Client
-
-Wrapper around the OpenAI API.
-
-Responsibilities:
-- understand user requests;
-- classify the required analysis action;
-- return a supported operation.
+| Component | File | What it does |
+|---|---|---|
+| Agent | `src/agent.py` | Gets the action from the LLM and runs the right analysis |
+| Data Loader | `src/data_loader.py` | Loads the CSV and validates columns, revenue and dates |
+| OpenAI Client | `src/llm/openai_client.py` | Classifies the question into a supported action |
+| DataFrame Manager | `src/dataframe_manager.py` | Pandas analysis logic |
+| Chart Generator | `src/chart_generator.py` | Line and bar charts with Matplotlib |
+| UI | `src/ui.py` | Gradio interface |
 
 Supported actions:
 
@@ -177,100 +83,125 @@ unknown
 
 ---
 
-### DataFrame Manager
+## CSV format
 
-Contains the business logic for data analysis.
+The file must contain these columns:
 
-Implemented operations:
-- average revenue calculation;
-- top products ranking;
-- revenue by region;
-- monthly revenue aggregation.
+| Column | Type | Example |
+|---|---|---|
+| `Date` | date | `2025-01-03` |
+| `Product` | text | `Laptop` |
+| `Region` | text | `North` |
+| `Revenue` | number | `1500` |
 
----
+Example:
 
-### Chart Generator
+```csv
+Date,Product,Region,Revenue
+2025-01-03,Laptop,North,1500
+2025-01-08,Monitor,East,800
+2025-01-15,Mouse,South,200
+```
 
-Responsible for creating visualizations.
-
-Implemented charts:
-- monthly revenue trend;
-- top products bar chart;
-- regional revenue chart.
-
-Charts are generated using Matplotlib and displayed directly in Gradio.
-
----
-
-## Tech Stack
-
-### Backend / Data Processing
-
-- Python
-- Pandas
-
-### AI / LLM
-
-- OpenAI API
-
-### User Interface
-
-- Gradio
-
-### Visualization
-
-- Matplotlib
-
-### Configuration
-
-- Pydantic Settings
-- python-dotenv
-
-### Testing
-
-- Pytest
-
-### Development Tools
-
-- Git
-- Virtual Environment
+The `data/` folder has a valid sample (`sales.csv`) and some broken files used to test the validation (`sales_dirty.csv`, `sales_empty.csv`, `sales_missing_columns.csv`, `sales_invalid.csv`).
 
 ---
 
-## Project Structure
+## Installation
+
+Requirements:
+- Python 3.11+
+- An OpenAI API key
+
+Clone the repository:
+
+```bash
+git clone https://github.com/francescomv98/ai-data-analyst.git
+cd ai-data-analyst
+```
+
+Create and activate a virtual environment:
+
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# Linux / macOS
+source .venv/bin/activate
+```
+
+Install the dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Configuration
+
+Create a `.env` file in the project root. Only the API key is required, the other values have defaults:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+
+# optional
+APP_NAME=AI Data Analyst
+APP_VERSION=1.0.0
+CHAT_MODEL=gpt-4.1-mini
+LOG_DIRECTORY=logs
+```
+
+Relative paths (like `LOG_DIRECTORY`) are relative to the project root.
+
+---
+
+## Running the application
+
+```bash
+python main.py
+```
+
+The interface opens automatically in your default browser. If it doesn't, go to:
+
+```
+http://localhost:7860
+```
+
+---
+
+## Testing
+
+```bash
+pytest
+```
+
+The tests cover CSV loading and validation, the analysis operations, chart generation and the OpenAI client (with the API mocked, so no key or network is needed for those).
+
+---
+
+## Project structure
 
 ```
 ai-data-analyst/
-
-│
 ├── src/
-│   │
 │   ├── config/
-│   │   └── settings.py              # Application configuration
-│   │
+│   │   └── settings.py          # configuration from .env
 │   ├── llm/
-│   │   └── openai_client.py         # OpenAI wrapper
-│   │
+│   │   └── openai_client.py     # OpenAI wrapper
 │   ├── utils/
-│   │   └── logger.py                # Logging configuration
-│   │
-│   ├── agent.py                     # Agent orchestration
-│   ├── data_loader.py               # CSV loading and validation
-│   ├── dataframe_manager.py         # Data analysis logic
-│   ├── chart_generator.py           # Matplotlib visualization
-│   └── ui.py                        # Gradio interface
-│
-├── tests/
-│   │
-│   ├── conftest.py                  # Shared test fixtures
-│   ├── test_data_loader.py
-│   ├── test_dataframe_manager.py
-│   ├── test_chart_generator.py
-│   └── test_openai_client.py
-│
-├── data/
-│   └── sample CSV files
-│
+│   │   └── logger.py            # logging setup
+│   ├── agent.py                 # orchestration
+│   ├── data_loader.py           # CSV loading and validation
+│   ├── dataframe_manager.py     # analysis logic
+│   ├── chart_generator.py       # charts
+│   └── ui.py                    # Gradio interface
+├── tests/                       # pytest tests
+├── data/                        # sample CSV files
+├── docs/images/                 # screenshots
+├── logs/                        # app.log (created at startup)
 ├── .env
 ├── requirements.txt
 ├── main.py
@@ -279,168 +210,11 @@ ai-data-analyst/
 
 ---
 
-## Installation
+## Tech stack
 
-### Requirements
-
-- Python 3.11+
-- OpenAI API key
-
----
-
-### Clone the repository
-
-```bash
-git clone https://github.com/francescomv98/ai-data-analyst.git
-
-cd ai-data-analyst
-```
-
----
-
-### Create virtual environment
-
-```bash
-python -m venv .venv
-```
-
-Activate:
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Linux / macOS:
-
-```bash
-source .venv/bin/activate
-```
-
----
-
-### Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-APP_NAME=AI Data Analyst
-
-APP_VERSION=1.0.0
-
-OPENAI_API_KEY=your_openai_api_key
-
-CHAT_MODEL=gpt-4.1-mini
-
-UPLOAD_DIRECTORY=data/uploads
-
-LOG_DIRECTORY=logs
-```
-
-The application uses Pydantic Settings to load configuration values.
-
----
-
-## Running the Application
-
-Start the application:
-
-```bash
-python main.py
-```
-
-The Gradio interface will be available at:
-
-```
-http://localhost:7860
-```
-
----
-
-## Example Usage
-
-Upload a CSV file containing sales information.
-
-Example questions:
-
-```
-What are the top 5 products?
-```
-
-```
-Show average revenue.
-```
-
-```
-Which region performs best?
-```
-
-```
-Plot monthly revenue.
-```
-
-Example workflow:
-
-```
-CSV Upload
-
-        |
-
-User Question
-
-        |
-
-AI Intent Detection
-
-        |
-
-Data Analysis
-
-        |
-
-Table / Chart Output
-```
-
----
-
-## Testing
-
-The project includes unit tests using pytest.
-
-Run:
-
-```bash
-pytest
-```
-
-Covered components:
-- CSV loading and validation
-- Data analysis operations
-- Chart generation
-- OpenAI client behavior
-- Error handling
-
----
-
-## Error Handling and Logging
-
-The application includes:
-- validation of uploaded files;
-- controlled exception handling;
-- logging of important execution steps.
-
-Examples of logged events:
-- CSV loading;
-- analysis execution;
-- OpenAI requests;
-- generated results;
-- unexpected failures.
+- **Python**, **Pandas** for data processing
+- **OpenAI API** for understanding the questions
+- **Gradio** for the web interface
+- **Matplotlib** for the charts
+- **Pydantic Settings** and **python-dotenv** for configuration
+- **pytest** for testing

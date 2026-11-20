@@ -98,11 +98,8 @@ class DataLoader:
                 f"{invalid_count} invalid values."
             )
 
-        # keep the converted values, otherwise a column read as text
-        # would make sum()/mean() fail later on
         dataframe["Revenue"] = revenue
 
-        # check dates now instead of failing later on "monthly revenue"
         invalid_dates = pd.to_datetime(dataframe["Date"], errors="coerce").isna()
 
         if invalid_dates.any():

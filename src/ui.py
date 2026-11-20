@@ -66,7 +66,6 @@ def analyze_request(dataframe: pd.DataFrame | None, question: str):
             result["chart"]
         )
     except ValueError as e:
-        # data problems (e.g. bad dates) are worth showing to the user as they are
         logger.error(f"Request processing failed: {e}")
 
         return (
@@ -129,7 +128,6 @@ def create_interface() -> gr.Blocks:
             outputs=[dataframe_state, upload_status]
         )
 
-        # removing the file must also forget the old data
         file_input.clear(
             fn=lambda: (None, ""),
             outputs=[dataframe_state, upload_status]

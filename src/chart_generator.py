@@ -115,5 +115,4 @@ class ChartGenerator:
 
         ax.grid(axis="y", linestyle="--", alpha=0.4)
 
-        # long product names / many months overlap otherwise
         ax.tick_params(axis="x", labelrotation=30)
