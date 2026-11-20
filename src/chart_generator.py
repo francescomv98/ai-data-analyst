@@ -1,11 +1,15 @@
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from src.utils.logger import logger
 
 class ChartGenerator:
     """
     Generates charts from processed data.
+
+    Figures are built with the object-oriented API instead of pyplot: pyplot keeps
+    every figure alive until it is closed, and it isn't safe to use from the worker
+    threads Gradio runs the callbacks in.
     """
 
     @staticmethod
@@ -22,13 +26,9 @@ class ChartGenerator:
 
         logger.info("Generating monthly revenue chart.")
 
-        required_columns = {"Month", "Revenue"}
+        ChartGenerator._check_columns(dataframe, "Month", "Revenue")
 
-        if not required_columns.issubset(dataframe.columns):
-            logger.error("Missing required columns for chart generation.")
-            raise ValueError("The DataFrame must contain 'Month' and 'Revenue' columns.")
-
-        fig, ax = plt.subplots(figsize=(8, 5), constrained_layout=True)
+        fig, ax = ChartGenerator._new_chart()
 
         ax.plot(
             dataframe["Month"],
@@ -37,19 +37,12 @@ class ChartGenerator:
             linewidth=2
         )
 
-        ax.set_title("Monthly Revenue")
-        ax.set_xlabel("Month")
-        ax.set_ylabel("Revenue")
-
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-
-        ax.grid(axis="y", linestyle="--", alpha=0.4)
+        ChartGenerator._style(ax, "Monthly Revenue", "Month")
 
         logger.info("Chart generated successfully.")
 
         return fig
-    
+
     @staticmethod
     def plot_top_products(dataframe: pd.DataFrame) -> Figure:
         """
@@ -58,32 +51,21 @@ class ChartGenerator:
 
         logger.info("Generating top products chart.")
 
-        required_columns = {"Product", "Revenue"}
+        ChartGenerator._check_columns(dataframe, "Product", "Revenue")
 
-        if not required_columns.issubset(dataframe.columns):
-            logger.error("Missing required columns for chart generation.")
-            raise ValueError("The DataFrame must contain 'Product' and 'Revenue' columns.")
-        
-        fig, ax = plt.subplots(figsize=(8, 5), constrained_layout=True)
+        fig, ax = ChartGenerator._new_chart()
 
         ax.bar(
-            dataframe["Product"],
+            dataframe["Product"].astype(str),
             dataframe["Revenue"]
         )
 
-        ax.set_title("Top Products")
-        ax.set_xlabel("Product")
-        ax.set_ylabel("Revenue")
-
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-
-        ax.grid(axis="y", linestyle="--", alpha=0.4)
+        ChartGenerator._style(ax, "Top Products", "Product")
 
         logger.info("Chart generated successfully.")
 
         return fig
-    
+
     @staticmethod
     def plot_best_region(dataframe: pd.DataFrame) -> Figure:
         """
@@ -92,21 +74,40 @@ class ChartGenerator:
 
         logger.info("Generating region chart.")
 
-        required_columns = {"Region", "Revenue"}
+        ChartGenerator._check_columns(dataframe, "Region", "Revenue")
 
-        if not required_columns.issubset(dataframe.columns):
-            logger.error("Missing required columns for chart generation.")
-            raise ValueError("The DataFrame must contain 'Region' and 'Revenue' columns.")
-        
-        fig, ax = plt.subplots(figsize=(8, 5), constrained_layout=True)
+        fig, ax = ChartGenerator._new_chart()
 
         ax.bar(
-            dataframe["Region"],
+            dataframe["Region"].astype(str),
             dataframe["Revenue"]
         )
 
-        ax.set_title("Revenue by Region")
-        ax.set_xlabel("Region")
+        ChartGenerator._style(ax, "Revenue by Region", "Region")
+
+        logger.info("Chart generated successfully.")
+
+        return fig
+
+    @staticmethod
+    def _check_columns(dataframe: pd.DataFrame, *columns: str) -> None:
+        missing = [column for column in columns if column not in dataframe.columns]
+
+        if missing:
+            logger.error("Missing required columns for chart generation.")
+            names = " and ".join(f"'{column}'" for column in columns)
+            raise ValueError(f"The DataFrame must contain {names} columns.")
+
+    @staticmethod
+    def _new_chart() -> tuple[Figure, Axes]:
+        fig = Figure(figsize=(8, 5), constrained_layout=True)
+        ax = fig.subplots()
+        return fig, ax
+
+    @staticmethod
+    def _style(ax: Axes, title: str, x_label: str) -> None:
+        ax.set_title(title)
+        ax.set_xlabel(x_label)
         ax.set_ylabel("Revenue")
 
         ax.spines["top"].set_visible(False)
@@ -114,6 +115,5 @@ class ChartGenerator:
 
         ax.grid(axis="y", linestyle="--", alpha=0.4)
 
-        logger.info("Chart generated successfully.")
-
-        return fig
+        # long product names / many months overlap otherwise
+        ax.tick_params(axis="x", labelrotation=30)

@@ -88,7 +88,8 @@ Return only the action.
                 ]
             )
 
-            action = response.output_text.strip()
+            # the model sometimes wraps the answer in quotes/backticks or changes the case
+            action = response.output_text.strip().strip("`'\".").lower()
 
             logger.info(f"Detected action: {action}")
 

@@ -1,8 +1,14 @@
 import logging
 from pathlib import Path
-from src.config.settings import settings
+from src.config.settings import BASE_DIR, settings
 
+# relative paths in .env are meant from the project root, not from wherever
+# the app happens to be started
 log_dir = Path(settings.log_directory)
+
+if not log_dir.is_absolute():
+    log_dir = BASE_DIR / log_dir
+
 log_dir.mkdir(parents=True, exist_ok=True)
 
 log_file = log_dir / "app.log"

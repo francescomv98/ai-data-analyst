@@ -84,7 +84,8 @@ class DataLoader:
         Validate required column data types.
         """
 
-        invalid_revenue = pd.to_numeric(dataframe["Revenue"], errors="coerce").isna()
+        revenue = pd.to_numeric(dataframe["Revenue"], errors="coerce")
+        invalid_revenue = revenue.isna()
 
         if invalid_revenue.any():
 
@@ -94,5 +95,23 @@ class DataLoader:
 
             raise ValueError(
                 f"Revenue column contains "
+                f"{invalid_count} invalid values."
+            )
+
+        # keep the converted values, otherwise a column read as text
+        # would make sum()/mean() fail later on
+        dataframe["Revenue"] = revenue
+
+        # check dates now instead of failing later on "monthly revenue"
+        invalid_dates = pd.to_datetime(dataframe["Date"], errors="coerce").isna()
+
+        if invalid_dates.any():
+
+            invalid_count = invalid_dates.sum()
+
+            logger.error(f"Found {invalid_count} invalid Date values.")
+
+            raise ValueError(
+                f"Date column contains "
                 f"{invalid_count} invalid values."
             )

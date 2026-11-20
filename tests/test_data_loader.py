@@ -65,3 +65,18 @@ def test_load_dirty_csv():
 
     with pytest.raises(ValueError):
         DataLoader.load_csv(file_path)
+def test_load_csv_with_invalid_dates(tmp_path):
+    file_path = tmp_path / "bad_dates.csv"
+    file_path.write_text(
+        "Date,Product,Region,Revenue\n"
+        "2025-01-03,Laptop,North,1500\n"
+        "not a date,Mouse,South,200\n"
+    )
+
+    with pytest.raises(ValueError, match="Date"):
+        DataLoader.load_csv(file_path)
+
+def test_revenue_is_numeric_after_loading():
+    dataframe = DataLoader.load_csv(DATA_DIR / "sales.csv")
+
+    assert pd.api.types.is_numeric_dtype(dataframe["Revenue"])

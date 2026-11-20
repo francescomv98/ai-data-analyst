@@ -42,3 +42,13 @@ def test_detect_action_handles_openai_failure():
     with patch.object(client.client.responses, "create", side_effect=Exception("API error")):
         with pytest.raises(RuntimeError):
             client.detect_action("Show monthly revenue")
+def test_detect_action_ignores_quotes_and_case():
+    client = OpenAIClient()
+
+    mock_response = Mock()
+    mock_response.output_text = " `Best_Region` "
+
+    with patch.object(client.client.responses, "create", return_value=mock_response):
+        result = client.detect_action("Which region sells more?")
+
+    assert result == "best_region"
